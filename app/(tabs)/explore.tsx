@@ -1,97 +1,102 @@
-import { StyleSheet, Image, Platform } from 'react-native';
-
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { StyleSheet, Image, Platform, View, Text, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import {
+  LineChart, 
+} from "react-native-chart-kit";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { calculateHousePayment } from '@/utils/utils';
+import interestData from "@/localData/savingInterest.json"
+import { useEffect, useState } from 'react';
+
+interface IData {
+    income: number,
+    savings: number,
+    spending: number,
+    homePrice: number,
+    futureSavings: number
+}
 
 export default function TabTwoScreen() {
+  const [userData, setUserData] = useState<IData>({
+    futureSavings: 0,
+    homePrice: 0,
+    income:0,
+    savings:0,
+    spending:0
+  })
+  
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem("userData");
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      // error reading value
+    }
+  };
+
+  useEffect(() => {
+    const readData = async () => {
+      const data = await getData();
+      console.log(data)
+      setUserData(data);
+    }
+
+
+    readData();
+  }, [])
+
+  const {totalSavings, totalAmountInFiveYears, totalAmountInTenYears, surplusAmountInFive,surplusAmountInTen,differenceAmountInFive,differenceAmountInTen} = calculateHousePayment(userData.savings, userData.homePrice, interestData);
+
+
+  const data = {
+    labels: ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10"],
+    datasets: [
+      {
+        data: totalSavings,
+        color: (opacity = 1) => `rgba(34, 65, 244, ${opacity})`,
+        strokeWidth: 2
+      }
+    ],
+    legend: ["Amount Of Savings"]
+  };
+
+  const chartConfig = {
+    backgroundGradientFrom: "#000000",
+    backgroundGradientFromOpacity: 0.7, // Adjust opacity to make gradient visible
+    backgroundGradientTo: "#000000",
+    backgroundGradientToOpacity: 1,
+    color: (opacity = 1) => `rgba(126, 255, 146, ${opacity})`, // Adjust opacity for chart elements
+    strokeWidth: 2, // optional, default 3
+    barPercentage: 1,
+    useShadowColorFromDataset: false // optional
+  };
+  
+ 
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <SafeAreaView>
+    <ThemedView style={styles.container}>
+     <ThemedText type="title">Data Centre</ThemedText>
+      <Text>Data Chart</Text>
+      <LineChart
+        data={data}
+        width={420}
+        height={220}
+        chartConfig={chartConfig}
+      />
+    
+    <Text>Total Amount Saved In 5 Years: ${Math.round(totalAmountInFiveYears)}</Text>
+    <Text>Total Amount Saved In 10 Years: ${Math.round(totalAmountInTenYears)}</Text>
+    {surplusAmountInFive === 0
+           ? (<Text>Sorry You Will Not Reach The Amount Needed To Put A Down Payment Down. You Will Be Short: ${Math.round(differenceAmountInFive)} in 5 Years and ${Math.round(differenceAmountInTen)} In 10</Text>)
+           : <Text>Congrats You Not Will Have Enough Saved In Order To Put A Down Payment Down. You Will Pass The Amount Needed By: ${Math.round(surplusAmountInFive)} in 5 Years and ${Math.round(surplusAmountInTen)} In 10</Text>
+          }
+    
+    </ThemedView>
+    </SafeAreaView>
+   
   );
 }
 
@@ -102,8 +107,10 @@ const styles = StyleSheet.create({
     left: -35,
     position: 'absolute',
   },
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flexDirection: 'column',
     gap: 8,
+    alignItems: 'center'
   },
 });
+
